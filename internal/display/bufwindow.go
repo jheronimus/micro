@@ -4,12 +4,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/Tubbles/tcell/v3"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/micro-editor/micro/v2/internal/buffer"
 	"github.com/micro-editor/micro/v2/internal/config"
 	"github.com/micro-editor/micro/v2/internal/screen"
 	"github.com/micro-editor/micro/v2/internal/util"
-	"github.com/Tubbles/tcell/v3"
 )
 
 // The BufWindow provides a way of displaying a certain section of a buffer.

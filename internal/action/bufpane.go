@@ -6,6 +6,7 @@ import (
 
 	luar "layeh.com/gopher-luar"
 
+	"github.com/Tubbles/tcell/v3"
 	"github.com/micro-editor/micro/v2/internal/buffer"
 	"github.com/micro-editor/micro/v2/internal/clipboard"
 	"github.com/micro-editor/micro/v2/internal/config"
@@ -13,7 +14,6 @@ import (
 	ulua "github.com/micro-editor/micro/v2/internal/lua"
 	"github.com/micro-editor/micro/v2/internal/screen"
 	"github.com/micro-editor/micro/v2/internal/util"
-	"github.com/Tubbles/tcell/v3"
 	lua "github.com/yuin/gopher-lua"
 )
 

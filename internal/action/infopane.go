@@ -3,12 +3,12 @@ package action
 import (
 	"bytes"
 
+	"github.com/Tubbles/tcell/v3"
 	"github.com/micro-editor/micro/v2/internal/buffer"
 	"github.com/micro-editor/micro/v2/internal/config"
 	"github.com/micro-editor/micro/v2/internal/display"
 	"github.com/micro-editor/micro/v2/internal/info"
 	"github.com/micro-editor/micro/v2/internal/util"
-	"github.com/Tubbles/tcell/v3"
 )
 
 type InfoKeyAction func(*InfoPane)

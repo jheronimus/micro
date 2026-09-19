@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Tubbles/tcell/v3"
 	shellquote "github.com/kballard/go-shellquote"
 	"github.com/micro-editor/micro/v2/internal/buffer"
 	"github.com/micro-editor/micro/v2/internal/clipboard"
@@ -18,7 +19,6 @@ import (
 	"github.com/micro-editor/micro/v2/internal/screen"
 	"github.com/micro-editor/micro/v2/internal/shell"
 	"github.com/micro-editor/micro/v2/internal/util"
-	"github.com/Tubbles/tcell/v3"
 )
 
 // ScrollUp is not an action
