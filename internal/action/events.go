@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"runtime"
 	"strings"
 
 	"github.com/Tubbles/tcell/v3"
@@ -36,18 +37,10 @@ type KeyEvent struct {
 	any  bool
 }
 
-func metaToAlt(mod tcell.ModMask) tcell.ModMask {
-	if mod&tcell.ModMeta != 0 {
-		mod &= ^tcell.ModMeta
-		mod |= tcell.ModAlt
-	}
-	return mod
-}
-
 func keyEvent(e *tcell.EventKey) KeyEvent {
 	ke := KeyEvent{
 		code: e.Key(),
-		mod:  metaToAlt(e.Modifiers()),
+		mod:  e.Modifiers(),
 	}
 	if e.Key() == tcell.KeyRune {
 		ke.str = e.Str()
@@ -60,19 +53,7 @@ func (k KeyEvent) Name() string {
 		return "<any>"
 	}
 	s := ""
-	m := []string{}
-	if k.mod&tcell.ModShift != 0 {
-		m = append(m, "Shift")
-	}
-	if k.mod&tcell.ModAlt != 0 {
-		m = append(m, "Alt")
-	}
-	if k.mod&tcell.ModMeta != 0 {
-		m = append(m, "Meta")
-	}
-	if k.mod&tcell.ModCtrl != 0 {
-		m = append(m, "Ctrl")
-	}
+	isDarwin := runtime.GOOS == "darwin"
 
 	ok := false
 	if s, ok = tcell.KeyNames[k.code]; !ok {
@@ -82,6 +63,45 @@ func (k KeyEvent) Name() string {
 			s = fmt.Sprintf("Key[%d]", k.code)
 		}
 	}
+
+	if isDarwin {
+		prefix := ""
+		if k.mod&tcell.ModCtrl != 0 {
+			prefix += "⌃"
+		}
+		if k.mod&tcell.ModAlt != 0 {
+			prefix += "⌥"
+		}
+		if k.mod&tcell.ModShift != 0 {
+			prefix += "⇧"
+		}
+		if k.mod&tcell.ModMeta != 0 {
+			prefix += "⌘"
+		}
+
+		if prefix != "" {
+			if k.mod&tcell.ModCtrl != 0 && strings.HasPrefix(s, "Ctrl-") {
+				s = s[5:]
+			}
+			return prefix + strings.ToUpper(s)
+		}
+		return s
+	}
+
+	m := []string{}
+	if k.mod&tcell.ModShift != 0 {
+		m = append(m, "Shift")
+	}
+	if k.mod&tcell.ModAlt != 0 {
+		m = append(m, "Alt")
+	}
+	if k.mod&tcell.ModMeta != 0 {
+		m = append(m, "Cmd")
+	}
+	if k.mod&tcell.ModCtrl != 0 {
+		m = append(m, "Ctrl")
+	}
+
 	if len(m) != 0 {
 		if k.mod&tcell.ModCtrl != 0 && strings.HasPrefix(s, "Ctrl-") {
 			s = s[5:]
@@ -180,7 +200,7 @@ func ConstructEvent(event tcell.Event) (Event, error) {
 	case *tcell.EventMouse:
 		return MouseEvent{
 			btn: e.Buttons(),
-			mod: metaToAlt(e.Modifiers()),
+			mod: e.Modifiers(),
 		}, nil
 	}
 	return nil, errors.New("No micro event equivalent")

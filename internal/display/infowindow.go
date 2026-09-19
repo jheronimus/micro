@@ -1,6 +1,8 @@
 package display
 
 import (
+	"runtime"
+
 	"github.com/Tubbles/tcell/v3"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/micro-editor/micro/v2/internal/buffer"
@@ -164,17 +166,25 @@ func (i *InfoWindow) displayBuffer() {
 }
 
 var keydisplay = []string{"^Q Quit, ^S Save, ^O Open, ^G Help, ^E Command Bar, ^K Cut Line", "^F Find, ^Z Undo, ^Y Redo, ^A Select All, ^D Duplicate Line, ^T New Tab"}
+var keydisplayDarwin = []string{"⌘Q Quit, ⌘S Save, ⌘O Open, ⌘G Help, ⌘E Command Bar, ⌘K Cut Line", "⌘F Find, ⌘Z Undo, ⌘⇧Z Redo, ⌘A Select All, ⌘D Duplicate Line, ⌘T New Tab"}
 
 func (i *InfoWindow) displayKeyMenu() {
-	// TODO: maybe make this based on the actual keybindings
+	kd := keydisplay
+	if runtime.GOOS == "darwin" {
+		kd = keydisplayDarwin
+	}
 
-	for y := 0; y < len(keydisplay); y++ {
-		for x := 0; x < i.Width; x++ {
-			if x < len(keydisplay[y]) {
-				screen.SetContent(x, i.Y-len(keydisplay)+y, rune(keydisplay[y][x]), nil, i.defStyle())
-			} else {
-				screen.SetContent(x, i.Y-len(keydisplay)+y, ' ', nil, i.defStyle())
+	for y := 0; y < len(kd); y++ {
+		curX := 0
+		for _, r := range kd[y] {
+			if curX < i.Width {
+				screen.SetContent(curX, i.Y-len(kd)+y, r, nil, i.defStyle())
+				curX += runewidth.RuneWidth(r)
 			}
+		}
+		for curX < i.Width {
+			screen.SetContent(curX, i.Y-len(kd)+y, ' ', nil, i.defStyle())
+			curX++
 		}
 	}
 }

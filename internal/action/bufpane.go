@@ -518,7 +518,7 @@ func (h *BufPane) HandleEvent(event tcell.Event) {
 		if e.Buttons() != tcell.ButtonNone {
 			me := MouseEvent{
 				btn:   e.Buttons(),
-				mod:   metaToAlt(e.Modifiers()),
+				mod:   e.Modifiers(),
 				state: MousePress,
 			}
 			isDrag := len(h.mousePressed) > 0

@@ -154,6 +154,15 @@ modSearch:
 		case strings.HasPrefix(k, "Alt"):
 			k = k[3:]
 			modifiers |= tcell.ModAlt
+		case strings.HasPrefix(k, "Opt"):
+			k = k[3:]
+			modifiers |= tcell.ModAlt
+		case strings.HasPrefix(k, "Cmd"):
+			k = k[3:]
+			modifiers |= tcell.ModMeta
+		case strings.HasPrefix(k, "Meta"):
+			k = k[4:]
+			modifiers |= tcell.ModMeta
 		case strings.HasPrefix(k, "Shift"):
 			k = k[5:]
 			modifiers |= tcell.ModShift
