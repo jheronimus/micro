@@ -1,0 +1,79 @@
+name: Auto-release on upstream stable bump
+
+on:
+  workflow_dispatch: # Manual trigger
+  schedule:
+    - cron: '0 4 * * *' # Check daily at 04:00 UTC
+
+jobs:
+  check-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          go-version: '1.24.x'
+          cache: false
+
+      - name: Checkout fork
+        uses: actions/checkout@v6
+        with:
+          ref: feature/tcell-v3
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Check latest upstream stable tag
+        id: check_tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git remote add upstream https://github.com/micro-editor/micro.git || true
+          git fetch upstream --tags
+
+          LATEST_UPSTREAM=$(git tag -l "v*" --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -n 1)
+          RELEASE_TAG="${LATEST_UPSTREAM}-kitty"
+
+          echo "latest_upstream=${LATEST_UPSTREAM}" >> $GITHUB_OUTPUT
+          echo "release_tag=${RELEASE_TAG}" >> $GITHUB_OUTPUT
+
+          # Check if this release already exists on jheronimus/micro
+          if gh release view "$RELEASE_TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Release $RELEASE_TAG already exists. Skipping."
+            echo "should_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "New upstream stable tag detected: $LATEST_UPSTREAM. Proceeding with release $RELEASE_TAG."
+            echo "should_release=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Rebase onto upstream stable tag
+        if: steps.check_tag.outputs.should_release == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git rebase "${{ steps.check_tag.outputs.latest_upstream }}" || {
+            echo "Clean rebase on tag failed; testing rebase on upstream master"
+            git rebase --abort
+            git rebase upstream/master
+          }
+
+      - name: Run cross-compile builds
+        if: steps.check_tag.outputs.should_release == 'true'
+        run: |
+          VERSION="${{ steps.check_tag.outputs.release_tag }}"
+          tools/cross-compile.sh "$VERSION"
+
+      - name: Publish GitHub Release
+        if: steps.check_tag.outputs.should_release == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.check_tag.outputs.release_tag }}
+          name: ${{ steps.check_tag.outputs.release_tag }}
+          body: |
+            Automated build of Micro tracking upstream `${{ steps.check_tag.outputs.latest_upstream }}` with **Kitty Keyboard Protocol (CSI-u) / tcell v3 support**.
+            
+            Fixes:
+            - Disambiguates `Ctrl+Shift+Z` (Redo) without dumping escape codes like `122;6u` into the buffer.
+            - Full support for modern macOS modifier chords and Kitty extended keyboard sequences.
+          files: binaries/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
