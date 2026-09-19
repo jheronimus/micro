@@ -25,6 +25,9 @@ build: generate build-quick
 
 build-quick:
 	CGO_ENABLED=$(CGO_ENABLED) go build -trimpath -ldflags "-s -w $(GOVARS) $(ADDITIONAL_GO_LINKER_FLAGS)" ./cmd/micro
+ifeq ($(GOHOSTOS), darwin)
+	codesign --force --deep --sign - ./micro
+endif
 
 build-dbg:
 	CGO_ENABLED=$(CGO_ENABLED) go build -trimpath -ldflags "$(ADDITIONAL_GO_LINKER_FLAGS) $(DEBUGVAR)" ./cmd/micro
