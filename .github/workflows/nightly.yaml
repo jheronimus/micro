@@ -7,9 +7,11 @@ jobs:
   nightly:
     strategy:
       matrix:
-        go-version: [1.23.x]
+        go-version: [1.25.x]
         os: [ubuntu-latest]
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     steps:
     - name: Setup
       uses: actions/setup-go@v6
@@ -20,7 +22,7 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v6
       with:
-        ref: master
+        ref: feature/tcell-v3
         fetch-depth: 0
         fetch-tags: true
 
