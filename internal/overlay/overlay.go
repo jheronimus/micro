@@ -21,18 +21,26 @@ type Rect struct {
 var overlay_handle = OverlayHandle(0)
 var overlays = make(map[OverlayHandle]OverlayFunction)
 
+// overlay_order preserves creation order so overlays draw deterministically:
+// Go map iteration is randomized, which would make overlapping overlays
+// flicker depending on which draw happens to run last each frame. Later
+// created overlays draw on top.
+var overlay_order []OverlayHandle
+
 func DisplayOverlays() {
 	// Should an OverlayFunction create or destroy an overlay, that would modify
-	// the overlays map while we are iterating through it.
-	// For this reason, we copy the overlays map into temp_overlays.
+	// the overlay state while we are iterating through it, so draws are
+	// collected first and invoked afterwards.
 
-	temp_overlays := make(map[OverlayHandle]OverlayFunction, len(overlays))
+	draw_fns := make([]OverlayFunction, 0, len(overlay_order))
 
-	for h, o := range overlays {
-		temp_overlays[h] = o
+	for _, h := range overlay_order {
+		if draw_fn, ok := overlays[h]; ok {
+			draw_fns = append(draw_fns, draw_fn)
+		}
 	}
 
-	for _, draw_fn := range temp_overlays {
+	for _, draw_fn := range draw_fns {
 		draw_fn()
 	}
 }
@@ -42,12 +50,19 @@ func DisplayOverlays() {
 func CreateOverlay(draw OverlayFunction) OverlayHandle {
 	overlay_handle++
 	overlays[overlay_handle] = draw
+	overlay_order = append(overlay_order, overlay_handle)
 	return overlay_handle
 }
 
 // DestroyOverlay destroys/deregisters an existing overlay via its handle.
 func DestroyOverlay(overlay OverlayHandle) {
 	delete(overlays, overlay)
+	for i, h := range overlay_order {
+		if h == overlay {
+			overlay_order = append(overlay_order[:i], overlay_order[i+1:]...)
+			break
+		}
+	}
 }
 
 // DrawRect draws a flat styled rectangle to the provided screen coordinates.
