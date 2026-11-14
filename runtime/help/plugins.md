@@ -396,7 +396,25 @@ The packages and their contents are listed below (in Go type signatures):
     Relevant links:
     [BufPane](https://pkg.go.dev/github.com/micro-editor/micro/v2/internal/action#BufPane)
     [tcell.Style](https://pkg.go.dev/github.com/micro-editor/tcell/v2#Style)
-    
+
+* `micro.SetLineTransform(name string, fn function)` (also `name, nil` to
+   unregister): registers a named per-line render transform. For every
+   non-active buffer line (the line(s) under the cursor and any selection
+   always render 100% raw), `fn` is called as
+   `fn(bufName, filetype, lineN, rawText)` and may return a table with:
+
+    - `text`: replacement text to display (e.g. concealed markup)
+    - `spans`: a list of `{start, length, bold, italic, underline, strike,
+       color}` tables styling ranges of the displayed line; indices count
+       runes from the start of the (possibly replaced) text
+    - `suffix`/`suffixColor`: styled text appended past the end of the line;
+       the color defaults to the colorscheme's `comment` group
+
+    Returning `nil` leaves the line untouched. Transforms run in
+    registration order, and every visible line on every frame — keep the
+    callback cheap and cache expensive parsing.
+
+
 
 This may seem like a small list of available functions, but some of the objects
 returned by the functions have many methods. The Lua plugin may access any

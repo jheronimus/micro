@@ -383,6 +383,34 @@ func (w *BufWindow) showCursor(x, y int, main bool) {
 	}
 }
 
+func isLineActive(cursors []*buffer.Cursor, y int, active bool) bool {
+	if !active {
+		return false
+	}
+	for _, c := range cursors {
+		if c.Y == y || c.HasSelection() {
+			top, bottom := c.CurSelection[0].Y, c.CurSelection[1].Y
+			if top > bottom {
+				top, bottom = bottom, top
+			}
+			if y >= top && y <= bottom {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// colorFromName resolves a color name against the colorscheme, falling
+// back to tcell color parsing for names the theme does not define
+func colorFromName(name string) tcell.Color {
+	if s, ok := config.Colorscheme[name]; ok {
+		fg, _, _ := s.Decompose()
+		return fg
+	}
+	return tcell.GetColor(name)
+}
+
 // displayBuffer draws the buffer being shown in this window on the screen.Screen
 func (w *BufWindow) displayBuffer() {
 	b := w.Buf
@@ -514,10 +542,45 @@ func (w *BufWindow) displayBuffer() {
 		bline := b.LineBytes(bloc.Y)
 		blineLen := util.CharacterCount(bline)
 
+		var lineSpans []StyleSpan
+		var lineSuffix string
+		var lineSuffixColor string
+		textReplaced := false
+
+		if len(LineTransforms) > 0 && !isLineActive(cursors, bloc.Y, w.active) {
+			bufPath := b.AbsPath
+			if bufPath == "" {
+				bufPath = b.GetName()
+			}
+			ft := b.FileType()
+			rawStr := string(bline)
+			for _, t := range LineTransforms {
+				res := t.Fn(bufPath, ft, bloc.Y, rawStr)
+				if res == nil {
+					continue
+				}
+				if res.Text != "" {
+					bline = []byte(res.Text)
+					blineLen = util.CharacterCount(bline)
+					textReplaced = true
+				}
+				lineSpans = append(lineSpans, res.Spans...)
+				if res.Suffix != "" {
+					lineSuffix = res.Suffix
+					lineSuffixColor = res.SuffixColor
+				}
+			}
+		}
+
 		leadingwsEnd := len(util.GetLeadingWhitespace(bline))
 		trailingwsStart := blineLen - util.CharacterCount(util.GetTrailingWhitespace(bline))
 
 		line, nColsBeforeStart, bslice, startStyle := w.getStartInfo(w.StartCol, bloc.Y)
+		if textReplaced {
+			line = bline
+			nColsBeforeStart = 0
+			bslice = 0
+		}
 		if startStyle != nil {
 			curStyle = *startStyle
 		}
@@ -746,7 +809,31 @@ func (w *BufWindow) displayBuffer() {
 				totalwidth += width
 			}
 
-			word = append(word, glyph{r, combc, curStyle, width})
+			glyphStyle := curStyle
+			if len(lineSpans) > 0 {
+				charIdx := bloc.X + len(word)
+				for _, span := range lineSpans {
+					if charIdx >= span.Start && charIdx < span.Start+span.Length {
+						if span.Bold {
+							glyphStyle = glyphStyle.Bold(true)
+						}
+						if span.Italic {
+							glyphStyle = glyphStyle.Italic(true)
+						}
+						if span.Underline {
+							glyphStyle = glyphStyle.Underline(true)
+						}
+						if span.Strike {
+							glyphStyle = glyphStyle.StrikeThrough(true)
+						}
+						if span.Color != "" {
+							glyphStyle = glyphStyle.Foreground(colorFromName(span.Color))
+						}
+					}
+				}
+			}
+
+			word = append(word, glyph{r, combc, glyphStyle, width})
 			wordwidth += width
 
 			// Collect a complete word to know its width.
@@ -805,6 +892,23 @@ func (w *BufWindow) displayBuffer() {
 					}
 					wrap()
 				}
+			}
+		}
+
+		if lineSuffix != "" && vloc.X < maxWidth {
+			suffixStyle := config.DefStyle
+			if lineSuffixColor != "" {
+				suffixStyle = suffixStyle.Foreground(colorFromName(lineSuffixColor))
+			} else if s, ok := config.Colorscheme["comment"]; ok {
+				fg, _, _ := s.Decompose()
+				suffixStyle = suffixStyle.Foreground(fg)
+			}
+			for _, sr := range []rune(lineSuffix) {
+				if vloc.X >= maxWidth {
+					break
+				}
+				screen.SetContent(vloc.X+w.X, vloc.Y+w.Y, sr, nil, suffixStyle)
+				vloc.X++
 			}
 		}
 

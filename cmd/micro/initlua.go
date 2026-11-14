@@ -44,6 +44,27 @@ func LuaImport(pkg string) *lua.LTable {
 	}
 }
 
+func optStr(t *lua.LTable, k, def string) string {
+	if v := t.RawGetString(k); v.Type() == lua.LTString {
+		return v.String()
+	}
+	return def
+}
+
+func optInt(t *lua.LTable, k string, def int) int {
+	if v := t.RawGetString(k); v.Type() == lua.LTNumber {
+		return int(lua.LVAsNumber(v))
+	}
+	return def
+}
+
+func optBool(t *lua.LTable, k string, def bool) bool {
+	if v := t.RawGetString(k); v.Type() == lua.LTBool {
+		return lua.LVAsBool(v)
+	}
+	return def
+}
+
 func luaImportMicro() *lua.LTable {
 	pkg := ulua.L.NewTable()
 
@@ -63,6 +84,59 @@ func luaImportMicro() *lua.LTable {
 		time.AfterFunc(t, func() {
 			timerChan <- f
 		})
+	}))
+
+	ulua.L.SetField(pkg, "SetLineTransform", ulua.L.NewFunction(func(L *lua.LState) int {
+		name := L.CheckString(1)
+		fn := L.OptFunction(2, nil)
+		if fn == nil {
+			display.RegisterLineTransform(name, nil)
+			return 0
+		}
+
+		display.RegisterLineTransform(name, func(bufName, filetype string, lineN int, rawText string) *display.LineTransformResult {
+			L.Push(fn)
+			L.Push(lua.LString(bufName))
+			L.Push(lua.LString(filetype))
+			L.Push(lua.LNumber(lineN))
+			L.Push(lua.LString(rawText))
+
+			if err := L.PCall(4, 1, nil); err != nil {
+				log.Println("line transform", name, "failed:", err)
+				return nil
+			}
+			ret := L.Get(-1)
+			L.Pop(1)
+			tbl, ok := ret.(*lua.LTable)
+			if !ok {
+				return nil
+			}
+
+			res := &display.LineTransformResult{
+				Text:        optStr(tbl, "text", ""),
+				Suffix:      optStr(tbl, "suffix", ""),
+				SuffixColor: optStr(tbl, "suffixColor", ""),
+			}
+
+			if v := tbl.RawGetString("spans"); v.Type() == lua.LTTable {
+				stbl := v.(*lua.LTable)
+				for i := 1; i <= stbl.Len(); i++ {
+					if itbl, ok := stbl.RawGetInt(i).(*lua.LTable); ok {
+						res.Spans = append(res.Spans, display.StyleSpan{
+							Start:     optInt(itbl, "start", 0),
+							Length:    optInt(itbl, "length", 0),
+							Bold:      optBool(itbl, "bold", false),
+							Italic:    optBool(itbl, "italic", false),
+							Underline: optBool(itbl, "underline", false),
+							Strike:    optBool(itbl, "strike", false),
+							Color:     optStr(itbl, "color", ""),
+						})
+					}
+				}
+			}
+			return res
+		})
+		return 0
 	}))
 
 	return pkg
