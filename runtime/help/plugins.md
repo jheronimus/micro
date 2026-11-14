@@ -394,7 +394,7 @@ The packages and their contents are listed below (in Go type signatures):
     - `Redraw()`: schedules a redraw of the entire screen.
 
     Relevant links:
-    [BufPane](https://pkg.go.dev/github.com/zyedidia/micro/v2/internal/action#BufPane)
+    [BufPane](https://pkg.go.dev/github.com/micro-editor/micro/v2/internal/action#BufPane)
     [tcell.Style](https://pkg.go.dev/github.com/micro-editor/tcell/v2#Style)
     
 
