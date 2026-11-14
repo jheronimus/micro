@@ -13,16 +13,13 @@ mkdir -p micro-$VERSION
 cp LICENSE micro-$VERSION
 cp README.md micro-$VERSION
 cp LICENSE-THIRD-PARTY micro-$VERSION
-cp assets/packaging/micro.1 micro-$VERSION
-cp assets/packaging/micro.desktop micro-$VERSION
-cp assets/micro-logo-mark.svg micro-$VERSION/micro.svg
 
 create_artefact_generic()
 {
 	mv micro micro-$VERSION/
 	tar -czf micro-$VERSION-$1.tar.gz micro-$VERSION
-	sha256sum micro-$VERSION-$1.tar.gz > micro-$VERSION-$1.tar.gz.sha
-	mv micro-$VERSION-$1.* binaries
+	sha256sum micro-$VERSION-$1.tar.gz >> binaries/checksums.txt
+	mv micro-$VERSION-$1.tar.gz binaries
 	rm micro-$VERSION/micro
 }
 
@@ -30,8 +27,8 @@ create_artefact_windows()
 {
 	mv micro.exe micro-$VERSION/
 	zip -r -q -T micro-$VERSION-$1.zip micro-$VERSION
-	sha256sum micro-$VERSION-$1.zip > micro-$VERSION-$1.zip.sha
-	mv micro-$VERSION-$1.* binaries
+	sha256sum micro-$VERSION-$1.zip >> binaries/checksums.txt
+	mv micro-$VERSION-$1.zip binaries
 	rm micro-$VERSION/micro.exe
 }
 
