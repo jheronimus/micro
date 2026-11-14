@@ -68,7 +68,9 @@ end
 function close_overlay()
 	-- Closes the overlay and untracks all events.
 	untrack_events()
-	overlay.DestroyOverlay(overlay_handle)
+	if overlay_handle then
+		overlay.DestroyOverlay(overlay_handle)
+	end
 	overlay_handle = nil
 end
 

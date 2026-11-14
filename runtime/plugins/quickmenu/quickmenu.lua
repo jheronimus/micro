@@ -206,7 +206,9 @@ end
 function close_finder()
     -- Closes the overlay and untracks all events.
     untrack_events()
-    overlay.DestroyOverlay(overlay_handle)
+    if overlay_handle then
+        overlay.DestroyOverlay(overlay_handle)
+    end
     overlay_handle = nil
 end
 

@@ -84,7 +84,7 @@ func DrawText(text string, x, y, w, h int, style tcell.Style) {
 			width = runewidth.RuneWidth(r)
 		}
 
-		if yy > h {
+		if yy >= h {
 			break
 		}
 
