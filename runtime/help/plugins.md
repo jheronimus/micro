@@ -395,6 +395,11 @@ The packages and their contents are listed below (in Go type signatures):
     - `BufPaneScreenRect(bp BufPane) overlay.Rect`: returns the bounds of a
        BufPane in screen coordinates. Converting a buffer location to screen
        coordinates is available as the `ScreenLoc` method on a BufPane.
+    - `SetCursor(x, y int)`: positions the terminal cursor for the frame
+       being drawn; call it from a draw callback every frame the position
+       should apply. A negative x hides the cursor. With no claim, the
+       cursor is placed exactly as if overlays were not drawn. Last claim
+       in a frame wins.
     - `Style() tcell.Style`: returns a default (empty) tcell.Style.
     - `GetColor(name string) tcell.Style`: takes in a syntax group and returns
        the colorscheme's style for that group.

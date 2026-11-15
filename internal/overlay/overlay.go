@@ -26,7 +26,15 @@ var overlays []overlay
 
 var overlay_handle = OverlayHandle(0)
 
+// frame-scoped terminal cursor claim (see SetCursor)
+var cursor_x, cursor_y int
+var cursor_claimed bool
+
 func DisplayOverlays() {
+	// The cursor claim is frame-scoped: SetCursor must be called from a draw
+	// callback every frame it should apply.
+	cursor_claimed = false
+
 	// Should an OverlayFunction create or destroy an overlay, that would modify
 	// the overlays slice while we are iterating through it.
 	// For this reason, we copy the overlays slice into temp_overlays.
@@ -38,6 +46,29 @@ func DisplayOverlays() {
 			o.draw()
 		}
 	}
+
+	// Apply the claim after all drawing, so overlays win over the cursor
+	// position the panes registered earlier in the frame. Screen.ShowCursor
+	// routes through the fake-cursor mode, where the claimed position is
+	// drawn as a reversed overlay cell.
+	if cursor_claimed {
+		if cursor_x < 0 {
+			screen.Screen.HideCursor()
+		} else {
+			screen.ShowCursor(cursor_x, cursor_y)
+		}
+	}
+}
+
+// SetCursor positions the terminal cursor for the frame being drawn.
+// Call it from a draw callback every frame the claim should apply; with
+// no claim the cursor behaves exactly as if overlays were not drawn.
+// A negative x hides the cursor. Multiple claims in one frame: the last
+// one wins, matching draw order.
+func SetCursor(x, y int) {
+	cursor_x = x
+	cursor_y = y
+	cursor_claimed = true
 }
 
 // live reports whether an overlay with the given handle is still registered.
