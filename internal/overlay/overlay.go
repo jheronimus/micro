@@ -3,9 +3,7 @@ package overlay
 import (
 	"github.com/mattn/go-runewidth"
 	"github.com/micro-editor/micro/v2/internal/action"
-	"github.com/micro-editor/micro/v2/internal/buffer"
 	"github.com/micro-editor/micro/v2/internal/config"
-	"github.com/micro-editor/micro/v2/internal/display"
 	"github.com/micro-editor/micro/v2/internal/screen"
 	"github.com/micro-editor/micro/v2/internal/util"
 	"github.com/micro-editor/tcell/v2"
@@ -131,25 +129,5 @@ func BufPaneScreenRect(bp *action.BufPane) Rect {
 		Y: v.Y,
 		W: v.Width,
 		H: v.Height,
-	}
-}
-
-// BufPaneScreenLoc converts a Loc in the buffer displayed in
-// a bufpane to screen coordinates.
-func BufPaneScreenLoc(bp *action.BufPane, loc buffer.Loc) buffer.Loc {
-	gutter := 0
-	bw, ok := bp.BWindow.(*display.BufWindow)
-	if ok {
-		gutter = bw.GutterOffset()
-	}
-
-	v := bp.GetView()
-	vloc := bp.VLocFromLoc(loc)
-	top := v.StartLine
-	yoff := bp.Diff(top, vloc.SLoc)
-
-	return buffer.Loc{
-		X: v.X + gutter + vloc.VisualX,
-		Y: v.Y + yoff,
 	}
 }

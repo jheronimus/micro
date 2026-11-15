@@ -385,9 +385,8 @@ The packages and their contents are listed below (in Go type signatures):
     - `DrawRect(x, y, w, h int, style tcell.Style)`: draws a rectangle to the
        provided screen coordinates.
     - `BufPaneScreenRect(bp BufPane) overlay.Rect`: returns the bounds of a
-       BufPane in screen coordinates.
-    - `BufPaneScreenLoc(bp BufPane, l Loc) Loc`: converts from line/column
-       coordinates to screen coordinates.
+       BufPane in screen coordinates. Converting a buffer location to screen
+       coordinates is available as the `ScreenLoc` method on a BufPane.
     - `Style() tcell.Style`: returns a default (empty) tcell.Style.
     - `GetColor(name string) tcell.Style`: takes in a syntax group and returns
        the colorscheme's style for that group.

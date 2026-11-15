@@ -286,6 +286,25 @@ func NewBufPaneFromBuf(buf *buffer.Buffer, tab *Tab) *BufPane {
 }
 
 // TODO: make sure splitID and tab are set before finishInitialize is called
+// ScreenLoc converts a Loc in the buffer to screen coordinates.
+func (h *BufPane) ScreenLoc(loc buffer.Loc) buffer.Loc {
+	gutter := 0
+	bw, ok := h.BWindow.(*display.BufWindow)
+	if ok {
+		gutter = bw.GutterOffset()
+	}
+
+	v := h.GetView()
+	vloc := h.VLocFromLoc(loc)
+	top := v.StartLine
+	yoff := h.Diff(top, vloc.SLoc)
+
+	return buffer.Loc{
+		X: v.X + gutter + vloc.VisualX,
+		Y: v.Y + yoff,
+	}
+}
+
 func (h *BufPane) finishInitialize() {
 	h.initialRelocate()
 	h.initialized = true

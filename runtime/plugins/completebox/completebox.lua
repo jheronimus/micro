@@ -105,7 +105,7 @@ function draw_autocomplete_overlay()
 
 	-- Note: The minus dereferences the Loc pointer
 	local l = -buf:GetActiveCursor().Loc
-	l = overlay.BufPaneScreenLoc(bp, l)
+	l = bp:ScreenLoc(l)
 
 	local x = l.X-compl_len
 	local y = l.Y+1
