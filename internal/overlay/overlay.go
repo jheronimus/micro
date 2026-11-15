@@ -2,13 +2,13 @@ package overlay
 
 import (
 	"github.com/mattn/go-runewidth"
-	"github.com/micro-editor/tcell/v2"
 	"github.com/micro-editor/micro/v2/internal/action"
 	"github.com/micro-editor/micro/v2/internal/buffer"
 	"github.com/micro-editor/micro/v2/internal/config"
 	"github.com/micro-editor/micro/v2/internal/display"
 	"github.com/micro-editor/micro/v2/internal/screen"
 	"github.com/micro-editor/micro/v2/internal/util"
+	"github.com/micro-editor/tcell/v2"
 )
 
 type OverlayHandle int
@@ -18,49 +18,56 @@ type Rect struct {
 	X, Y, W, H int
 }
 
-var overlay_handle = OverlayHandle(0)
-var overlays = make(map[OverlayHandle]OverlayFunction)
+type overlay struct {
+	handle OverlayHandle
+	draw   OverlayFunction
+}
 
-// overlay_order preserves creation order so overlays draw deterministically:
-// Go map iteration is randomized, which would make overlapping overlays
-// flicker depending on which draw happens to run last each frame. Later
-// created overlays draw on top.
-var overlay_order []OverlayHandle
+// We use a slice instead of a map so that more than one overlay can be drawn deterministically
+var overlays []overlay
+
+var overlay_handle = OverlayHandle(0)
 
 func DisplayOverlays() {
 	// Should an OverlayFunction create or destroy an overlay, that would modify
-	// the overlay state while we are iterating through it, so draws are
-	// collected first and invoked afterwards.
+	// the overlays slice while we are iterating through it.
+	// For this reason, we copy the overlays slice into temp_overlays.
+	temp_overlays := make([]overlay, len(overlays))
+	copy(temp_overlays, overlays)
 
-	draw_fns := make([]OverlayFunction, 0, len(overlay_order))
-
-	for _, h := range overlay_order {
-		if draw_fn, ok := overlays[h]; ok {
-			draw_fns = append(draw_fns, draw_fn)
+	for _, o := range temp_overlays {
+		if live(o.handle) {
+			o.draw()
 		}
 	}
+}
 
-	for _, draw_fn := range draw_fns {
-		draw_fn()
+// live reports whether an overlay with the given handle is still registered.
+// Draw callbacks may destroy overlays mid-frame, so each snapshot entry is
+// re-checked before being invoked.
+func live(h OverlayHandle) bool {
+	for _, o := range overlays {
+		if o.handle == h {
+			return true
+		}
 	}
+	return false
 }
 
 // CreateOverlay creates and registers a new overlay, and returns
 // the OverlayHandle associated with it.
 func CreateOverlay(draw OverlayFunction) OverlayHandle {
 	overlay_handle++
-	overlays[overlay_handle] = draw
-	overlay_order = append(overlay_order, overlay_handle)
+	overlays = append(overlays, overlay{handle: overlay_handle, draw: draw})
 	return overlay_handle
 }
 
 // DestroyOverlay destroys/deregisters an existing overlay via its handle.
-func DestroyOverlay(overlay OverlayHandle) {
-	delete(overlays, overlay)
-	for i, h := range overlay_order {
-		if h == overlay {
-			overlay_order = append(overlay_order[:i], overlay_order[i+1:]...)
-			break
+func DestroyOverlay(h OverlayHandle) {
+	for i, o := range overlays {
+		if o.handle == h {
+			overlays = append(overlays[:i], overlays[i+1:]...)
+			return
 		}
 	}
 }
