@@ -377,8 +377,11 @@ The packages and their contents are listed below (in Go type signatures):
        overlay, and returns the OverlayHandle associated with it.
     - `DestroyOverlay(handle OverlayHandle)`: deregisters an existing overlay
        via its handle.
-    - `DrawText(text string, x, y, w, h int, style tcell.Style)`: draws styled
-       text clipped to the bounds of the provided screen rectangle.
+    - `DrawText(text string, x, y, w, h int, style tcell.Style)`: fills the
+       provided rectangle with the style background, then draws styled text
+       clipped to the same bounds. Drawing text spans side by side requires
+       passing each span its own width: the fill covers the whole rectangle,
+       so a wider w paints a background band past the text.
     - `DrawRect(x, y, w, h int, style tcell.Style)`: draws a rectangle to the
        provided screen coordinates.
     - `BufPaneScreenRect(bp BufPane) overlay.Rect`: returns the bounds of a

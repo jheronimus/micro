@@ -81,7 +81,10 @@ func DrawRect(x, y, w, h int, style tcell.Style) {
 	}
 }
 
-// DrawText draws styled clipped text to the provided screen coordinates.
+// DrawText fills the provided rectangle with the style background, then
+// draws the text clipped to the same bounds. Callers drawing text spans
+// side by side must pass each span its own width: the fill covers the
+// whole rectangle, so a wider w paints a background band past the text.
 func DrawText(text string, x, y, w, h int, style tcell.Style) {
 	DrawRect(x, y, w, h, style)
 
