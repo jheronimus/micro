@@ -557,17 +557,22 @@ func DoEvent() {
 
 	if event != nil {
 		_, resize := event.(*tcell.EventResize)
-		if resize {
-			action.InfoBar.HandleEvent(event)
-			action.Tabs.HandleEvent(event)
-		} else if captured, err := config.RunPluginFnBool(nil, "preAnyEvent", luar.New(ulua.L, event)); err != nil {
-			screen.TermMessage(err)
-		} else if captured {
-			// a plugin captured the event
-		} else if action.InfoBar.HasPrompt {
-			action.InfoBar.HandleEvent(event)
-		} else {
-			action.Tabs.HandleEvent(event)
+		consumed := false
+		if !resize {
+			// preAnyEvent follows the pre-hook convention: returning false
+			// consumes the event, true (or nothing) passes it through
+			passed, err := config.RunPluginFnBool(nil, "preAnyEvent", luar.New(ulua.L, event))
+			if err != nil {
+				screen.TermMessage(err)
+			}
+			consumed = err == nil && !passed
+		}
+		if !consumed {
+			if action.InfoBar.HasPrompt {
+				action.InfoBar.HandleEvent(event)
+			} else {
+				action.Tabs.HandleEvent(event)
+			}
 		}
 	}
 
