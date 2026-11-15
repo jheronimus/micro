@@ -253,7 +253,6 @@ func luaImportMicroOverlay() *lua.LTable {
 	ulua.L.SetField(pkg, "BufPaneScreenLoc", luar.New(ulua.L, overlay.BufPaneScreenLoc))
 	ulua.L.SetField(pkg, "Style", luar.New(ulua.L, func() tcell.Style { return tcell.Style{} }))
 	ulua.L.SetField(pkg, "GetColor", luar.New(ulua.L, config.GetColor))
-	ulua.L.SetField(pkg, "StringToStyle", luar.New(ulua.L, config.StringToStyle))
 	ulua.L.SetField(pkg, "Redraw", luar.New(ulua.L, screen.Redraw))
 
 	return pkg

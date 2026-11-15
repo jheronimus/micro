@@ -391,9 +391,6 @@ The packages and their contents are listed below (in Go type signatures):
     - `Style() tcell.Style`: returns a default (empty) tcell.Style.
     - `GetColor(name string) tcell.Style`: takes in a syntax group and returns
        the colorscheme's style for that group.
-    - `StringToStyle(str string) tcell.Style`: returns a style from a string.
-       The string must be in the format "extra foregroundcolor,backgroundcolor".
-       The "extra" can be bold, reverse, italic or underline.
     - `Redraw()`: schedules a redraw of the entire screen.
 
     Relevant links:
