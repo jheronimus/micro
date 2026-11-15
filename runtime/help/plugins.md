@@ -94,6 +94,14 @@ that micro defines:
 
 * `preRune(bufpane, rune)`: runs before the composed rune will be inserted
 
+* `preAnyEvent(event)`: runs before any event is dispatched to the editor.
+   The tcell event is passed as the argument. Returning `false` consumes
+   the event: it is not routed to the infobar prompt, the active pane, or
+   any other handler. This lets plugins capture input while a floating
+   window is open, like the infobar prompt does; resize events are never
+   captured. Returning nothing or `true` leaves the event to be
+   dispatched normally.
+
 * `onAnyEvent()`: runs when literally anything happens. It is useful for
    detecting various changes of micro's state that cannot be detected
    using other callbacks.

@@ -22,12 +22,14 @@ import (
 	"github.com/micro-editor/micro/v2/internal/buffer"
 	"github.com/micro-editor/micro/v2/internal/clipboard"
 	"github.com/micro-editor/micro/v2/internal/config"
+	ulua "github.com/micro-editor/micro/v2/internal/lua"
 	"github.com/micro-editor/micro/v2/internal/overlay"
 	"github.com/micro-editor/micro/v2/internal/screen"
 	"github.com/micro-editor/micro/v2/internal/shell"
 	"github.com/micro-editor/micro/v2/internal/util"
 	"github.com/micro-editor/tcell/v2"
 	lua "github.com/yuin/gopher-lua"
+	luar "layeh.com/gopher-luar"
 )
 
 // multiStringFlag is a flag.Value that accumulates multiple values.
@@ -558,6 +560,10 @@ func DoEvent() {
 		if resize {
 			action.InfoBar.HandleEvent(event)
 			action.Tabs.HandleEvent(event)
+		} else if captured, err := config.RunPluginFnBool(nil, "preAnyEvent", luar.New(ulua.L, event)); err != nil {
+			screen.TermMessage(err)
+		} else if captured {
+			// a plugin captured the event
 		} else if action.InfoBar.HasPrompt {
 			action.InfoBar.HandleEvent(event)
 		} else {
